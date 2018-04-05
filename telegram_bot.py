@@ -6,7 +6,7 @@ import os
 
 TELEGRAM_URL = 'https://api.telegram.org/botBOT_TOKEN/sendMessage?chat_id=CHAT_ID&text=TEXT'
 TELEGRAM_URL_CHECK = 'https://api.telegram.org/botBOT_TOKEN/getUpdates'
-VK_URL = 'https://api.vk.com/method/wall.get?v=5.52&domain=USER_NAME&access_token=TOKEN&count=20'
+VK_URL = 'https://api.vk.com/method/wall.get?v=5.52&domain=USER_NAME&access_token=TOKEN&count=20&filter=owner'
 
 
 @click.command()
@@ -36,7 +36,13 @@ def main(t_token, channel, user_name, v_token):
         updates_answer = json.loads(req_ans)
         for upd in updates_answer['result']:
             if str(upd['update_id']) not in updates_id:
-                bot_action(upd['message']['text'], upd['message']['chat']['id'])
+                if 'message' in upd:
+                    tmp_key = 'message'
+                elif 'channel_post' in upd:
+                    tmp_key = 'channel_post'
+                else:
+                    continue
+                bot_action(upd[tmp_key]['text'], upd[tmp_key]['chat']['id'])
                 updates_id.add(upd['update_id'])
                 updatesLogFile.write('{}\n'.format(upd['update_id']))
         updatesLogFile.close()
@@ -49,7 +55,7 @@ def main(t_token, channel, user_name, v_token):
             for example in vk_answer['response']['items'][::-1]:
                 unique_id = '{}_{}_{}'.format(example['id'], example['from_id'], example['owner_id'])
                 if unique_id not in posts_id:
-                    requests.get(TELEGRAM_URL.replace('BOT_TOKEN', t_token).replace('CHAT_ID', channel).replace('TEXT', un+':'+example['text']))
+                    requests.get(TELEGRAM_URL.replace('BOT_TOKEN', t_token).replace('CHAT_ID', channel).replace('TEXT', un+'\n'+example['text']))
                     if 'attachments' in example:
                         for atch in example['attachments']:
                             if atch['type'] == 'photo':
