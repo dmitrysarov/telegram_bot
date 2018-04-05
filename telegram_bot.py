@@ -18,7 +18,7 @@ def main(t_token, channel, user_name, v_token):
 
     def bot_action(text, chat_id):
         if text == 'ping':
-            requests.get(TELEGRAM_URL.replace('BOT_TOKEN', t_token).replace('CHAT_ID', str(chat_id)).replace('TEXT', 'I am alive and full of health!'))
+            requests.get(TELEGRAM_URL.replace('BOT_TOKEN', t_token), params = {'chat_id': chat_id, 'text': 'I am alive and full of health!'})
 
     link = ''
     if not os.path.isfile('log.txt'):
@@ -33,8 +33,7 @@ def main(t_token, channel, user_name, v_token):
         try:
             updatesLogFile = open('updates_log.txt','r+')
             updates_id = set(updatesLogFile.read().splitlines())
-            req_ans = requests.get(TELEGRAM_URL_CHECK.replace('BOT_TOKEN', t_token)).content
-            updates_answer = json.loads(req_ans)
+            updates_answer = requests.get(TELEGRAM_URL_CHECK.replace('BOT_TOKEN', t_token)).json()
             for upd in updates_answer['result']:
                 if str(upd['update_id']) not in updates_id:
                     if 'message' in upd:
@@ -44,7 +43,7 @@ def main(t_token, channel, user_name, v_token):
                     else:
                         continue
                     bot_action(upd[tmp_key]['text'], upd[tmp_key]['chat']['id'])
-                    updates_id.add(upd['update_id'])
+                    updates_id.add(str(upd['update_id']))
                     updatesLogFile.write('{}\n'.format(upd['update_id']))
             updatesLogFile.close()
             #trace walls
