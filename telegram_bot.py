@@ -3,7 +3,10 @@ import requests
 import time
 import json
 import os
-
+import logging
+logging.basicConfig(level=logging.INFO,
+                    format='%(levelname)s: %(asctime)s ::: %(name)s: %(message)s (%(filename)s:%(lineno)d)',
+                                        datefmt='%Y-%m-%d %H:%M:%S')
 TELEGRAM_URL = 'https://api.telegram.org/botBOT_TOKEN/sendMessage?'
 TELEGRAM_URL_CHECK = 'https://api.telegram.org/botBOT_TOKEN/getUpdates'
 VK_URL = 'https://api.vk.com/method/wall.get?v=5.52&domain=USER_NAME&access_token=TOKEN&count=20&filter=owner'
@@ -69,8 +72,8 @@ def main(t_token, channel, user_name, v_token):
                         logFile.write('{}\n'.format(unique_id))
             logFile.close()
         except Exception as e:
-            print(str(e))
-        time.sleep(20)
+            logging.info(str(e))
+        time.sleep(60)
 
 if __name__ == '__main__':
     main()
