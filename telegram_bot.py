@@ -73,7 +73,7 @@ def main(t_token, channel, user_name, v_token):
             logFile.close()
         except Exception as e:
             logging.info(str(e))
-        time.sleep(60)
+        time.sleep(300)
 
 if __name__ == '__main__':
     main()
