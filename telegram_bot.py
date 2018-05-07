@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.INFO,
                                         datefmt='%Y-%m-%d %H:%M:%S')
 TELEGRAM_URL = 'https://api.telegram.org/botBOT_TOKEN/sendMessage?'
 TELEGRAM_URL_CHECK = 'https://api.telegram.org/botBOT_TOKEN/getUpdates'
-VK_URL = 'https://api.vk.com/method/wall.get?v=5.52&domain=USER_NAME&access_token=TOKEN&count=20&filter=owner'
+VK_URL = 'https://api.vk.com/method/wall.get?'
 
 
 @click.command()
@@ -19,9 +19,11 @@ VK_URL = 'https://api.vk.com/method/wall.get?v=5.52&domain=USER_NAME&access_toke
 @click.option('--v_token', help='vk app token', required=True)
 def main(t_token, channel, user_name, v_token):
 
-    def bot_action(text, chat_id):
-        if text == 'ping':
+    def bot_action(input_text, chat_id, output_text = ''):
+        if input_text == 'ping':
             requests.get(TELEGRAM_URL.replace('BOT_TOKEN', t_token), params = {'chat_id': chat_id, 'text': 'I am alive and full of health!'})
+        if input_text == 'last':
+            requests.get(TELEGRAM_URL.replace('BOT_TOKEN', t_token), params = {'chat_id': chat_id, 'text': output_text})
 
     link = ''
     if not os.path.isfile('log.txt'):
@@ -32,8 +34,32 @@ def main(t_token, channel, user_name, v_token):
         updatesLogFile.close()
     #starting trace
     while True:
-        #updates handle
         try:
+            #trace walls
+            logFile = open('log.txt','r+')
+            posts_id = set(logFile.read().splitlines())
+            for un in user_name:
+                req_ans = requests.get(VK_URL, params = {'v': '5.52', 'domain': un, 'access_token': v_token, 'count': 20, 'filter': 'owner'}).content
+                vk_answer = json.loads(req_ans)
+                for example in vk_answer['response']['items'][::-1]:
+                    unique_id = '{}_{}_{}'.format(example['id'], example['from_id'], example['owner_id'])
+                    if unique_id not in posts_id:
+                        if 'attachments' in example:
+                            for atch in example['attachments']:
+                                if atch['type'] == 'photo':
+                                    phts = atch['photo']
+                                    dim = [int(d.replace('photo_','')) for d in phts.keys() if d.startswith('photo_')]
+                                    link = phts['photo_{}'.format(max(dim))] #getting photo with max dim
+                        if link != '':
+                            requests.get(TELEGRAM_URL.replace('BOT_TOKEN', t_token), params = {'chat_id': channel, 'text': un+'\n'+example['text']+'\n'+link})
+                            link = ''
+                        else:
+                            requests.get(TELEGRAM_URL.replace('BOT_TOKEN', t_token), params = {'chat_id': channel, 'text': un+'\n'+example['text']})
+
+                        posts_id.add(unique_id)
+                        logFile.write('{}\n'.format(unique_id))
+            logFile.close()
+            #updates handle of telegram
             updatesLogFile = open('updates_log.txt','r+')
             updates_id = set(updatesLogFile.read().splitlines())
             updates_answer = requests.get(TELEGRAM_URL_CHECK.replace('BOT_TOKEN', t_token)).json()
@@ -45,32 +71,10 @@ def main(t_token, channel, user_name, v_token):
                         tmp_key = 'channel_post'
                     else:
                         continue
-                    bot_action(upd[tmp_key]['text'], upd[tmp_key]['chat']['id'])
+                    bot_action(upd[tmp_key]['text'], upd[tmp_key]['chat']['id'], output_text = un+'\n'+example['text'])
                     updates_id.add(str(upd['update_id']))
                     updatesLogFile.write('{}\n'.format(upd['update_id']))
             updatesLogFile.close()
-            #trace walls
-            logFile = open('log.txt','r+')
-            posts_id = set(logFile.read().splitlines())
-            for un in user_name:
-                req_ans = requests.get(VK_URL.replace('USER_NAME', un).replace('TOKEN', v_token)).content
-                vk_answer = json.loads(req_ans)
-                for example in vk_answer['response']['items'][::-1]:
-                    unique_id = '{}_{}_{}'.format(example['id'], example['from_id'], example['owner_id'])
-                    if unique_id not in posts_id:
-                        requests.get(TELEGRAM_URL.replace('BOT_TOKEN', t_token), params = {'chat_id': channel, 'text': un+'\n'+example['text']})
-                        if 'attachments' in example:
-                            for atch in example['attachments']:
-                                if atch['type'] == 'photo':
-                                    phts = atch['photo']
-                                    dim = [int(d.replace('photo_','')) for d in phts.keys() if d.startswith('photo_')]
-                                    link = phts['photo_{}'.format(max(dim))] #getting photo with max dim
-                        if link != '':
-                            requests.get(TELEGRAM_URL.replace('BOT_TOKEN', t_token).replace('CHAT_ID', channel).replace('TEXT', link))
-                            link = ''
-                        posts_id.add(unique_id)
-                        logFile.write('{}\n'.format(unique_id))
-            logFile.close()
         except Exception as e:
             logging.info(str(e))
         time.sleep(300)
