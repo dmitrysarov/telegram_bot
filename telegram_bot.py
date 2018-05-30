@@ -8,6 +8,7 @@ logging.basicConfig(level=logging.INFO,
                     format='%(levelname)s: %(asctime)s ::: %(name)s: %(message)s (%(filename)s:%(lineno)d)',
                                         datefmt='%Y-%m-%d %H:%M:%S')
 TELEGRAM_URL = 'https://api.telegram.org/botBOT_TOKEN/sendMessage?'
+TELEGRAM_SEND_PHOTO_URL = 'https://api.telegram.org/botBOT_TOKEN/sendPhoto?'
 TELEGRAM_URL_CHECK = 'https://api.telegram.org/botBOT_TOKEN/getUpdates'
 VK_URL = 'https://api.vk.com/method/wall.get?'
 
@@ -51,7 +52,8 @@ def main(t_token, channel, user_name, v_token):
                                     dim = [int(d.replace('photo_','')) for d in phts.keys() if d.startswith('photo_')]
                                     link = phts['photo_{}'.format(max(dim))] #getting photo with max dim
                         if link != '':
-                            requests.get(TELEGRAM_URL.replace('BOT_TOKEN', t_token), params = {'chat_id': channel, 'text': un+'\n'+example['text']+'\n'+link})
+                            requests.get(TELEGRAM_URL.replace('BOT_TOKEN', t_token), params = {'chat_id': channel, 'text': un+'\n'+example['text']})
+                            requests.get(TELEGRAM_SEND_PHOTO_URL.replace('BOT_TOKEN', t_token), params = {'chat_id': channel, 'photo': link})
                             link = ''
                         else:
                             requests.get(TELEGRAM_URL.replace('BOT_TOKEN', t_token), params = {'chat_id': channel, 'text': un+'\n'+example['text']})
