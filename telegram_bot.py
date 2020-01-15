@@ -46,17 +46,19 @@ def main(t_token, channel, user_name, v_token):
                     unique_id = '{}_{}_{}'.format(example['id'], example['from_id'], example['owner_id'])
                     if unique_id not in posts_id:
                         if 'attachments' in example:
+                            photo_text = []
                             for atch in example['attachments']:
                                 if atch['type'] == 'photo':
                                     phts = atch['photo']
                                     dim = [int(d.replace('photo_','')) for d in phts.keys() if d.startswith('photo_')]
                                     link = phts['photo_{}'.format(max(dim))] #getting photo with max dim
+                                    photo_text.append(atch['photo'].get('text', ''))
                         if link != '':
-                            requests.get(TELEGRAM_URL.replace('BOT_TOKEN', t_token), params = {'chat_id': channel, 'text': un+'\n'+example['text']})
+                            requests.get(TELEGRAM_URL.replace('BOT_TOKEN', t_token), params = {'chat_id': channel, 'text': un+'\n'+example['text']+'\n'+''.join(photo_text)})
                             requests.get(TELEGRAM_SEND_PHOTO_URL.replace('BOT_TOKEN', t_token), params = {'chat_id': channel, 'photo': link})
                             link = ''
                         else:
-                            requests.get(TELEGRAM_URL.replace('BOT_TOKEN', t_token), params = {'chat_id': channel, 'text': un+'\n'+example['text']})
+                            requests.get(TELEGRAM_URL.replace('BOT_TOKEN', t_token), params = {'chat_id': channel, 'text': un+'\n'+example['text']+'\n'+''.join(photo_text)})
 
                         posts_id.add(unique_id)
                         logFile.write('{}\n'.format(unique_id))
