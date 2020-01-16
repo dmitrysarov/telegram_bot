@@ -41,7 +41,6 @@ def main(t_token, channel, user_name, v_token):
             logFile = open('log.txt','r+')
             posts_id = set(logFile.read().splitlines())
             for un in user_name:
-                import pdb; pdb.set_trace()
                 req_ans = requests.get(VK_URL, params = {'v': '5.52', 'domain': un, 'access_token': v_token, 'count': 20, 'filter': 'owner'}).json()
                 #vk_answer = json.loads(str(req_ans))
                 vk_answer = req_ans
@@ -56,12 +55,19 @@ def main(t_token, channel, user_name, v_token):
                                     dim = [int(d.replace('photo_','')) for d in phts.keys() if d.startswith('photo_')]
                                     link = phts['photo_{}'.format(max(dim))] #getting photo with max dim
                                     photo_text.append(atch['photo'].get('text', ''))
+                                elif atch['type'] == 'album':
+                                    thumb = atch['album']['thumb']
+                                    dim = [int(d.replace('photo_','')) for d in thumb.keys() if d.startswith('photo_')]
+                                    link = thumb['photo_{}'.format(max(dim))] #getting photo with max dim
+                                    photo_text.append(thumb.get('text', ''))
                         if link != '':
                             requests.get(TELEGRAM_URL.replace('BOT_TOKEN', t_token), params = {'chat_id': channel, 'text': un+'\n'+example['text']+'\n'+''.join(photo_text)})
                             requests.get(TELEGRAM_SEND_PHOTO_URL.replace('BOT_TOKEN', t_token), params = {'chat_id': channel, 'photo': link})
                             link = ''
                         else:
-                            requests.get(TELEGRAM_URL.replace('BOT_TOKEN', t_token), params = {'chat_id': channel, 'text': un+'\n'+example['text']+'\n'+''.join(photo_text)})
+                            if example['text'] != '':
+                                import pdb; pdb.set_trace()
+                                requests.get(TELEGRAM_URL.replace('BOT_TOKEN', t_token), params = {'chat_id': channel, 'text': un+'\n'+example['text']})
 
                         posts_id.add(unique_id)
                         logFile.write('{}\n'.format(unique_id))
