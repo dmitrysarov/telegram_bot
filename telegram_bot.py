@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import click
 import requests
 import time
@@ -40,8 +41,10 @@ def main(t_token, channel, user_name, v_token):
             logFile = open('log.txt','r+')
             posts_id = set(logFile.read().splitlines())
             for un in user_name:
-                req_ans = requests.get(VK_URL, params = {'v': '5.52', 'domain': un, 'access_token': v_token, 'count': 20, 'filter': 'owner'}).content
-                vk_answer = json.loads(req_ans)
+                import pdb; pdb.set_trace()
+                req_ans = requests.get(VK_URL, params = {'v': '5.52', 'domain': un, 'access_token': v_token, 'count': 20, 'filter': 'owner'}).json()
+                #vk_answer = json.loads(str(req_ans))
+                vk_answer = req_ans
                 for example in vk_answer['response']['items'][::-1]:
                     unique_id = '{}_{}_{}'.format(example['id'], example['from_id'], example['owner_id'])
                     if unique_id not in posts_id:
